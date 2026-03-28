@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Car Animation with car.jpg</title>
+    <title>Car Animation</title>
     <style>
-        /* 动画容器：模拟道路 */
         .road {
             width: 100%;
             height: 300px;
@@ -13,31 +12,22 @@
             overflow: hidden;
             border: 1px solid #ddd;
         }
-
-        /* 小汽车样式：直接用你的car.jpg */
         .car {
-            width: 120px; /* 可根据你的图片大小调整 */
+            width: 120px;
             height: auto;
             position: absolute;
             bottom: 50px;
-            left: -150px; /* 初始在屏幕左侧外，准备驶入 */
+            left: -150px;
             animation: drive 6s linear infinite;
         }
-
-        /* 动画关键帧：从左到右循环移动 */
         @keyframes drive {
-            0% {
-                left: -150px; /* 起点：屏幕外左侧 */
-            }
-            100% {
-                left: 100%; /* 终点：屏幕外右侧 */
-            }
+            0% { left: -150px; }
+            100% { left: 100%; }
         }
     </style>
 </head>
 <body>
     <div class="road">
-        <!-- 直接引用你的car.jpg图片 -->
         <img src="car.jpg" alt="Moving Car" class="car">
     </div>
 </body>
