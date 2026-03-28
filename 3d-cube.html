@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Gradient Cube (Lab4)</title>
+    <style>
+        /* 全局样式：让立方体居中，适配屏幕 */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+            perspective: 1200px; /* 增强3D透视感 */
+        }
+
+        /* 立方体容器：核心3D属性 */
+        .cube {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            transform-style: preserve-3d; /* 必须保留，否则3D失效 */
+            transform: rotateX(25deg) rotateY(45deg); /* 初始视角，方便观察 */
+            transition: transform 3s ease-in-out; /* 平滑旋转动画 */
+        }
+
+        /* 立方体6个面的通用样式 */
+        .cube-face {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border: 2px solid #222; /* 边框区分面，更清晰 */
+            opacity: 0.92; /* 半透明，看清3D结构 */
+            box-sizing: border-box;
+        }
+
+        /* 1. 前面（Front）：渐变+translateZ */
+        .front {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            transform: translateZ(100px);
+        }
+
+        /* 2. 后面（Back）：渐变+translateZ */
+        .back {
+            background: linear-gradient(45deg, #48dbfb, #0abde3);
+            transform: rotateY(180deg) translateZ(100px);
+        }
+
+        /* 3. 右面（Right）：skewX变形（题目要求）+渐变+translateZ */
+        .right {
+            background: linear-gradient(45deg, #ff9ff3, #f368e0);
+            transform: rotateY(90deg) skewX(10deg) translateZ(100px);
+        }
+
+        /* 4. 左面（Left）：skewX变形（题目要求）+渐变+translateZ */
+        .left {
+            background: linear-gradient(45deg, #54a0ff, #5f27cd);
+            transform: rotateY(-90deg) skewX(-10deg) translateZ(100px);
+        }
+
+        /* 5. 上面（Top）：skewY变形（题目要求）+渐变+translateZ */
+        .top {
+            background: linear-gradient(45deg, #00d2d3, #01a3a4);
+            transform: rotateX(90deg) skewY(10deg) translateZ(100px);
+        }
+
+        /* 6. 下面（Bottom）：skewY变形（题目要求）+渐变+translateZ */
+        .bottom {
+            background: linear-gradient(45deg, #ff7675, #d63031);
+            transform: rotateX(-90deg) skewY(-10deg) translateZ(100px);
+        }
+
+        /* 鼠标悬停自动旋转，效果更酷，不影响作业要求 */
+        .cube:hover {
+            transform: rotateX(25deg) rotateY(405deg);
+        }
+    </style>
+</head>
+<body>
+    <!-- 立方体结构：完全用HTML div实现，符合题目要求 -->
+    <div class="cube">
+        <div class="cube-face front"></div>
+        <div class="cube-face back"></div>
+        <div class="cube-face right"></div>
+        <div class="cube-face left"></div>
+        <div class="cube-face top"></div>
+        <div class="cube-face bottom"></div>
+    </div>
+</body>
+</html>
