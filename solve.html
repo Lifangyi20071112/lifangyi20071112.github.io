@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quadratic Equation Solver</title>
+</head>
+<body>
+    <script>
+        // 1. Get coefficients a, b, c from user using prompt()
+        let a = prompt("Enter coefficient a (a > 0):");
+        let b = prompt("Enter coefficient b:");
+        let c = prompt("Enter coefficient c:");
+
+        // 2. Convert input strings to numbers using parseFloat()
+        a = parseFloat(a);
+        b = parseFloat(b);
+        c = parseFloat(c);
+
+        // 3. Compute delta (discriminant)
+        let delta = b * b - 4 * a * c;
+
+        // 4. Calculate roots x1 and x2
+        let x1 = (-b + Math.sqrt(delta)) / (2 * a);
+        let x2 = (-b - Math.sqrt(delta)) / (2 * a);
+
+        // 5. Show results with alert()
+        alert("Quadratic Equation Roots:\n" +
+              "x1 = " + x1 + "\n" +
+              "x2 = " + x2);
+
+        // 6. Print results to console
+        console.log("Quadratic Equation Results:");
+        console.log("a =", a, "b =", b, "c =", c);
+        console.log("Delta =", delta);
+        console.log("x1 =", x1);
+        console.log("x2 =", x2);
+    </script>
+</body>
+</html>
