@@ -1,0 +1,184 @@
+// 游戏状态对象
+const gameState = {
+  disksCount: 5,
+  pegs: [[], [], []],
+  moves: 0,
+  isAutoSolving: false,
+  selectedPegIndex: null,
+  selectedDiskSize: null
+};
+
+// DOM元素
+const diskCountInput = document.getElementById("diskCount");
+const moveCountSpan = document.getElementById("moveCount");
+const resetBtn = document.getElementById("resetBtn");
+const autoSolveBtn = document.getElementById("autoSolveBtn");
+const warningDiv = document.getElementById("warning");
+const pegs = document.querySelectorAll(".peg");
+
+// 圆盘配色
+const diskColors = [
+  "#ff6b6b","#ffa94d","#ffe066","#69db7c",
+  "#74c0fc","#b197fc","#f783ac","#4dabf7"
+];
+
+// 初始化游戏
+function initGame() {
+  gameState.disksCount = parseInt(diskCountInput.value);
+  gameState.moves = 0;
+  gameState.isAutoSolving = false;
+  gameState.selectedPegIndex = null;
+  gameState.selectedDiskSize = null;
+  gameState.pegs = [[], [], []];
+
+  for(let i = gameState.disksCount; i >= 1; i--){
+    gameState.pegs[0].push(i);
+  }
+
+  updateMoveCount();
+  renderDisks();
+  hideWarning();
+}
+
+// 渲染圆盘
+function renderDisks() {
+  document.querySelectorAll(".disk").forEach(d=>d.remove());
+
+  gameState.pegs.forEach((stack, pIdx)=>{
+    const peg = pegs[pIdx];
+    stack.forEach((size, sIdx)=>{
+      const disk = document.createElement("div");
+      disk.className = "disk";
+      disk.dataset.size = size;
+      disk.dataset.peg = pIdx;
+
+      const w = 60 + (size - 1) * 17;
+      disk.style.width = w + "px";
+      disk.style.backgroundColor = diskColors[size - 1];
+      disk.style.bottom = sIdx * 25 + "px";
+
+      disk.onclick = ()=>selectDisk(pIdx, size);
+      peg.appendChild(disk);
+    });
+  });
+}
+
+// 选中圆盘
+function selectDisk(pIdx, size) {
+  if(gameState.isAutoSolving) return;
+  const top = gameState.pegs[pIdx].at(-1);
+  if(top !== size){
+    showWarning("Only top disk can move!");
+    return;
+  }
+
+  clearSelection();
+  gameState.selectedPegIndex = pIdx;
+  gameState.selectedDiskSize = size;
+  document.querySelector(`.disk[data-peg="${pIdx}"][data-size="${size}"]`).classList.add("selected");
+}
+
+// 柱子点击放圆盘
+pegs.forEach((peg, tIdx)=>{
+  peg.onclick = ()=>{
+    if(gameState.isAutoSolving) return;
+    if(gameState.selectedPegIndex === null) return;
+    if(gameState.selectedPegIndex === tIdx){
+      clearSelection();
+      return;
+    }
+
+    const targetTop = gameState.pegs[tIdx].at(-1);
+    if(targetTop && gameState.selectedDiskSize > targetTop){
+      showWarning("Cannot place larger on smaller!");
+      return;
+    }
+
+    doMove(gameState.selectedPegIndex, tIdx);
+  };
+});
+
+// 移动圆盘
+function doMove(from, to) {
+  const disk = gameState.pegs[from].pop();
+  gameState.pegs[to].push(disk);
+  gameState.moves++;
+  clearSelection();
+  updateMoveCount();
+  renderDisks();
+  checkWin();
+}
+
+// 清除选中
+function clearSelection() {
+  gameState.selectedPegIndex = null;
+  gameState.selectedDiskSize = null;
+  document.querySelectorAll(".disk.selected").forEach(d=>d.classList.remove("selected"));
+}
+
+// 更新步数
+function updateMoveCount() {
+  moveCountSpan.textContent = gameState.moves;
+}
+
+// 胜利判断
+function checkWin() {
+  if(gameState.pegs[2].length === gameState.disksCount){
+    warningDiv.textContent = "YOU WIN! 🎉";
+    warningDiv.className = "warning show";
+    document.querySelector(".board").classList.add("win-animation");
+  }
+}
+
+// 警告提示
+function showWarning(text) {
+  warningDiv.textContent = text;
+  warningDiv.className = "warning show";
+  setTimeout(hideWarning, 1200);
+}
+function hideWarning() {
+  warningDiv.className = "warning";
+}
+
+// 重置按钮
+resetBtn.onclick = ()=>{
+  initGame();
+  document.querySelector(".board").classList.remove("win-animation");
+};
+
+// 数量改变自动重置
+diskCountInput.onchange = ()=>{
+  initGame();
+  document.querySelector(".board").classList.remove("win-animation");
+};
+
+// 自动求解（符合作业递归+延迟要求）
+async function autoSolve(from, to, temp, n) {
+  if(n === 0) return;
+  await autoSolve(from, temp, to, n - 1);
+
+  return new Promise(resolve=>{
+    setTimeout(()=>{
+      if(gameState.pegs[from].length) doMove(from, to);
+      resolve();
+    }, 600);
+  });
+}
+
+autoSolveBtn.onclick = async ()=>{
+  if(gameState.isAutoSolving) return;
+  gameState.isAutoSolving = true;
+  autoSolveBtn.disabled = true;
+  resetBtn.disabled = true;
+  diskCountInput.disabled = true;
+
+  await autoSolve(0,2,1, gameState.disksCount);
+
+  gameState.isAutoSolving = false;
+  autoSolveBtn.disabled = false;
+  resetBtn.disabled = false;
+  diskCountInput.disabled = false;
+};
+
+// 页面初次加载
+initGame();

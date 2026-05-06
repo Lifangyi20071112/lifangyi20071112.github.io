@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Tower of Hanoi</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #87CEEB, #E6E6FA);
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        button {
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .warning {
+            color: red;
+            font-weight: bold;
+            margin-bottom: 10px;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .warning.show {
+            opacity: 1;
+            animation: shakeWarning 0.5s;
+        }
+
+        .board {
+            display: flex;
+            justify-content: space-around;
+            perspective: 1000px;
+            padding: 20px;
+        }
+
+        .peg {
+            width: 30%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .peg-label {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .peg-stick {
+            width: 15px;
+            height: 200px;
+            background: linear-gradient(to right, #8B4513, #A0522D, #8B4513);
+            border-radius: 5px 5px 0 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .disk {
+            position: absolute;
+            height: 25px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transform-style: preserve-3d;
+            transition: all 0.3s ease;
+        }
+
+        .disk.selected {
+            transform: translateY(-30px) translateZ(20px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+        }
+
+        @keyframes shakeWarning {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes glowWin {
+            0% { box-shadow: 0 0 5px gold; }
+            50% { box-shadow: 0 0 20px gold, 0 0 30px orange; }
+            100% { box-shadow: 0 0 5px gold; }
+        }
+
+        .win-animation .disk {
+            animation: glowWin 1s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Tower of Hanoi (3D)</h1>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="diskCount">Number of disks (3-8):</label>
+                <input type="number" id="diskCount" min="3" max="8" value="5">
+            </div>
+            <div class="control-group">
+                <span>Moves: <span id="moveCount">0</span></span>
+            </div>
+            <button id="resetBtn">Reset</button>
+            <button id="autoSolveBtn">Auto Solve</button>
+        </div>
+
+        <div id="warning" class="warning"></div>
+
+        <div class="board">
+            <div class="peg" data-index="0">
+                <div class="peg-stick"></div>
+                <div class="peg-label">Peg A</div>
+            </div>
+            <div class="peg" data-index="1">
+                <div class="peg-stick"></div>
+                <div class="peg-label">Peg B</div>
+            </div>
+            <div class="peg" data-index="2">
+                <div class="peg-stick"></div>
+                <div class="peg-label">Peg C</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const gameState = {
+            disksCount: 5,
+            pegs: [[], [], []],
+            moves: 0,
+            isAutoSolving: false,
+            selectedPegIndex: null,
+            selectedDiskSize: null
+        };
+
+        const diskCountInput = document.getElementById("diskCount");
+        const moveCountSpan = document.getElementById("moveCount");
+        const resetBtn = document.getElementById("resetBtn");
+        const autoSolveBtn = document.getElementById("autoSolveBtn");
+        const warningDiv = document.getElementById("warning");
+        const pegs = document.querySelectorAll(".peg");
+
+        const diskColors = [
+            "#ff6b6b","#ffa94d","#ffe066","#69db7c",
+            "#74c0fc","#b197fc","#f783ac","#4dabf7"
+        ];
+
+        function initGame() {
+            gameState.disksCount = parseInt(diskCountInput.value);
+            gameState.moves = 0;
+            gameState.isAutoSolving = false;
+            gameState.selectedPegIndex = null;
+            gameState.selectedDiskSize = null;
+            gameState.pegs = [[], [], []];
+
+            for(let i = gameState.disksCount; i >= 1; i--){
+                gameState.pegs[0].push(i);
+            }
+
+            updateMoveCount();
+            renderDisks();
+            hideWarning();
+            document.querySelector(".board").classList.remove("win-animation");
+        }
+
+        function renderDisks() {
+            document.querySelectorAll(".disk").forEach(d=>d.remove());
+
+            gameState.pegs.forEach((stack, pIdx)=>{
+                const peg = pegs[pIdx];
+                stack.forEach((size, sIdx)=>{
+                    const disk = document.createElement("div");
+                    disk.className = "disk";
+                    disk.dataset.size = size;
+                    disk.dataset.peg = pIdx;
+
+                    const w = 60 + (size - 1) * 17;
+                    disk.style.width = w + "px";
+                    disk.style.backgroundColor = diskColors[size - 1];
+                    disk.style.bottom = sIdx * 25 + "px";
+
+                    disk.onclick = ()=>selectDisk(pIdx, size);
+                    peg.appendChild(disk);
+                });
+            });
+        }
+
+        function selectDisk(pIdx, size) {
+            if(gameState.isAutoSolving) return;
+            const top = gameState.pegs[pIdx].at(-1);
+            if(top !== size){
+                showWarning("Only top disk can move!");
+                return;
+            }
+
+            clearSelection();
+            gameState.selectedPegIndex = pIdx;
+            gameState.selectedDiskSize = size;
+            document.querySelector(`.disk[data-peg="${pIdx}"][data-size="${size}"]`).classList.add("selected");
+        }
+
+        pegs.forEach((peg, tIdx)=>{
+            peg.onclick = ()=>{
+                if(gameState.isAutoSolving) return;
+                if(gameState.selectedPegIndex === null) return;
+                if(gameState.selectedPegIndex === tIdx){
+                    clearSelection();
+                    return;
+                }
+
+                const targetTop = gameState.pegs[tIdx].at(-1);
+                if(targetTop && gameState.selectedDiskSize > targetTop){
+                    showWarning("Cannot place larger on smaller!");
+                    return;
+                }
+
+                doMove(gameState.selectedPegIndex, tIdx);
+            };
+        });
+
+        function doMove(from, to) {
+            const disk = gameState.pegs[from].pop();
+            gameState.pegs[to].push(disk);
+            gameState.moves++;
+            clearSelection();
+            updateMoveCount();
+            renderDisks();
+            checkWin();
+        }
+
+        function clearSelection() {
+            gameState.selectedPegIndex = null;
+            gameState.selectedDiskSize = null;
+            document.querySelectorAll(".disk.selected").forEach(d=>d.classList.remove("selected"));
+        }
+
+        function updateMoveCount() {
+            moveCountSpan.textContent = gameState.moves;
+        }
+
+        function checkWin() {
+            if(gameState.pegs[2].length === gameState.disksCount){
+                warningDiv.textContent = "YOU WIN! 🎉";
+                warningDiv.className = "warning show";
+                document.querySelector(".board").classList.add("win-animation");
+            }
+        }
+
+        function showWarning(text) {
+            warningDiv.textContent = text;
+            warningDiv.className = "warning show";
+            setTimeout(hideWarning, 1200);
+        }
+        function hideWarning() {
+            warningDiv.className = "warning";
+        }
+
+        resetBtn.onclick = ()=>{
+            initGame();
+        };
+
+        diskCountInput.onchange = ()=>{
+            initGame();
+        };
+
+        async function autoSolve(from, to, temp, n) {
+            if(n === 0) return;
+            await autoSolve(from, temp, to, n - 1);
+
+            return new Promise(resolve=>{
+                setTimeout(()=>{
+                    if(gameState.pegs[from].length) doMove(from, to);
+                    resolve();
+                }, 600);
+            });
+        }
+
+        autoSolveBtn.onclick = async ()=>{
+            if(gameState.isAutoSolving) return;
+            gameState.isAutoSolving = true;
+            autoSolveBtn.disabled = true;
+            resetBtn.disabled = true;
+            diskCountInput.disabled = true;
+
+            await autoSolve(0,2,1, gameState.disksCount);
+
+            gameState.isAutoSolving = false;
+            autoSolveBtn.disabled = false;
+            resetBtn.disabled = false;
+            diskCountInput.disabled = false;
+        };
+
+        initGame();
+    </script>
+</body>
+</html>
